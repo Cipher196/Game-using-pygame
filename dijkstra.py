@@ -82,6 +82,7 @@ class block:
 player=block(10,5,2,0.25,'blue')
 enemy=block(20,20,2,0.2,'red')
 
+
 # functions 
 
 def show_screen():
@@ -103,19 +104,6 @@ def check_corner(x,y):
 def check_all_corner(x,y,w,h):
     return check_corner(x,y) and check_corner(x+w,y) and check_corner(x,y+h) and check_corner(x+w,y+h)
 
-def move_enemy():
-
-    dx=player.x-enemy.x
-    dy=player.y-enemy.y
-
-    dist=(dx**2+dy**2)**0.5
-
-    if dist!=0:
-        dx/=dist
-        dy/=dist
-
-    enemy.move(dx,dy)
-
 def check_enemy_collision():
 
     player.w = player.Size_Tiles
@@ -126,7 +114,99 @@ def check_enemy_collision():
     if not(player.x+player.w<enemy.x or player.x>enemy.x+enemy.w or player.y+player.h<enemy.y or player.y>enemy.y+enemy.h):
         global running
         running=False
+
+# Applying Dijkstra 
+
+import heapq as hq
+
+def dijkstra(start,end,size):
+    
+    pq=[(0,start)]
+    dist={start: 0}
+    prev={}
+    visited = set()
+
+    while pq:
+        curr_dist, curr= hq.heappop(pq)
+
+        if curr in visited:
+            continue
+
+        visited.add(curr)
+
+        if curr==end:
+            break
+
+        directions = [(0,-1),(0,1),(1,0),(-1,0)]
+
+        for direction in directions:
+
+            next = (curr[0]+direction[0],curr[1]+direction[1])
+
+            if not check_all_corner(next[0],next[1],enemy.Size_Tiles,enemy.Size_Tiles):
+                continue
+
+            new_dist=curr_dist+1
+
+            if next not in dist or new_dist<dist[next]:
+                dist[next]=new_dist
+                prev[next]=curr
+                hq.heappush(pq,(new_dist,next))
+
+    if end not in prev:
+        return None
+    
+    path=[]
+    curr=end
+    while curr!=start:
+        path.append(curr)
+        if curr not in prev:
+            return None
+        curr = prev[curr]
+    path.reverse()
+
+    if path:
+        return path[1]
+    
+    return None
+
+
+def move_enemy():  
+
+    next_pos=dijkstra((int(enemy.x),int(enemy.y)),(int(player.x),int(player.y)),enemy.Size_Tiles)
+
+    # print(next_pos)
+    # print(enemy.x," ",enemy.y)
+
+    if next_pos :
+
+        target_x,target_y=next_pos
+
+        dx=target_x-enemy.x
+        dy=target_y-enemy.y
+
+        move_enemy_to(dx,dy)
+
+    else:
+
+        dx=player.x-enemy.x
+        dy=player.y-enemy.y
+
+        move_enemy_to(dx,dy)
         
+def move_enemy_to(dx,dy):
+    
+    if dx<0:
+        dx=-1
+    if dx>0:
+        dx=1
+    if dy<0:
+        dy=-1
+
+    if dy>0:
+        dy=1
+
+    enemy.move(dx,dy)
 
 # Game Loop 
 
@@ -150,7 +230,9 @@ while running:
     if keys[pygame.K_s] or keys[pygame.K_DOWN]:
         player.move(0,1)
 
+    
     move_enemy()
+    
 
     check_enemy_collision()
 
