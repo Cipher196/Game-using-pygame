@@ -40,7 +40,7 @@ FPS=60
 
 pygame.init()
 screen=pygame.display.set_mode((Screen_Width,Screen_Height))
-pygame.display.set_caption("Simple chase the player")
+pygame.display.set_caption("A* Search Algorithm")
 clock=pygame.time.Clock()
 
 # Class 
