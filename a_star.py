@@ -119,64 +119,56 @@ def check_enemy_collision():
 
 import heapq as hq
 
-def dijkstra(start,end):
+def astar(start,end):
     
-    pq=[(0,start)]
-    dist={start: 0}
-    prev={}
-    visited = set()
+    open_set=[]
+    hq.heappush(open_set,(h(start),start))
+    
+    came_from={}
 
-    while pq:
-        curr_dist, curr= hq.heappop(pq)
+    g_score={}
+    g_score[start]=0
 
-        if curr in visited:
-            continue
-
-        visited.add(curr)
+    while open_set:
+        f_curr,curr=hq.heappop(open_set)
 
         if curr==end:
-            break
-
-        directions = [(0,-1),(0,1),(1,0),(-1,0)]
+            return remake_path(came_from,curr)
+        
+        directions=[(1,0),(-1,0),(0,1),(0,-1)]
 
         for direction in directions:
-
-            next = (curr[0]+direction[0],curr[1]+direction[1])
-
-            if not check_all_corner(next[0],next[1],enemy.Size_Tiles,enemy.Size_Tiles):
+            near=(curr[0]+direction[0],curr[1]+direction[1])
+            if not check_all_corner(near[0],near[1],enemy.Size_Tiles,enemy.Size_Tiles):
                 continue
 
-            new_dist=curr_dist+1
+            new_g_score=g_score[curr]+1
+            if near not in g_score or new_g_score<g_score[near]:
 
-            if next not in dist or new_dist<dist[next]:
-                dist[next]=new_dist
-                prev[next]=curr
-                hq.heappush(pq,(new_dist,next))
+                came_from[near]=curr
+                g_score[near]=new_g_score
+                new_f_score=new_g_score+h(near)
 
-    if end not in prev:
-        return None
-    
-    path=[]
-    curr=end
-    while curr!=start:
-        path.append(curr)
-        if curr not in prev:
-            return None
-        curr = prev[curr]
-    path.reverse()
+                if near not in open_set:
+                    hq.heappush(open_set,(new_f_score,near))
 
-    if path:
-        return path[1]
-    
     return None
+
+def h(node):
+    return abs(node[0]-player.x)+abs(node[1]-player.y)
+
+def remake_path(came_from,curr):
+    total_path=[curr]
+    while curr in came_from:
+        curr=came_from[curr]
+        total_path.append(curr)
+    total_path.reverse()
+    return total_path[2]
 
 
 def move_enemy():  
 
-    next_pos=dijkstra((int(enemy.x),int(enemy.y)),(int(player.x),int(player.y)))
-
-    # print(next_pos)
-    # print(enemy.x," ",enemy.y)
+    next_pos=astar((int(enemy.x),int(enemy.y)),(int(player.x),int(player.y)))
 
     if next_pos :
 
@@ -202,7 +194,6 @@ def move_enemy_to(dx,dy):
         dx=1
     if dy<0:
         dy=-1
-
     if dy>0:
         dy=1
 
